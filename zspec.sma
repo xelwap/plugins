@@ -89,7 +89,7 @@ public ZSpec(id)
 		return PLUGIN_HANDLED
 	}
 	
-	if(is_user_alive(id) == 0)
+	if(!is_user_alive(id))
 	{
 		client_print_color( id, "You have to be ^3Alive ^1in order to use this command.")
 		
