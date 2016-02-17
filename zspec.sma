@@ -149,9 +149,8 @@ public remove_zspec(id)
 }
 
 public client_disconnect(id)
-{
 	remove_zspec(id)
-}
+
 
 count_admins()
 {
