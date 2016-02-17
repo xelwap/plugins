@@ -29,33 +29,33 @@ public plugin_init()
 
 public RoundStart() 
 {
-	static Players[32], Num, Player, i;
-	get_players( Players, Num ); 
+	static Players[32], Num, Player, i
+	get_players( Players, Num ) 
 	for( i = 0; i < Num; i++ )
 	{
-		Player = Players[i];
+		Player = Players[i]
 		remove_zspec(Player)
 	}
 }
 
 public bb_prepphase_started()
 {
-	static Players[32], Num, Player, i;
-	get_players( Players, Num ); 
+	static Players[32], Num, Player, i
+	get_players( Players, Num ) 
 	for( i = 0; i < Num; i++ )
 	{
-		Player = Players[i];
+		Player = Players[i]
 		remove_zspec(Player)
 	}
 }
 
 public bb_round_started()
 {
-	static Players[32], Num, Player, i;
-	get_players( Players, Num ); 
+	static Players[32], Num, Player, i
+	get_players( Players, Num ) 
 	for( i = 0; i < Num; i++ )
 	{
-		Player = Players[i];
+		Player = Players[i]
 		remove_zspec(Player)
 	}
 }
@@ -118,7 +118,7 @@ public ZSpec(id)
 	
 	if(ZSpectator[id])
 	{
-		set_task(0.5,"remove_zspec", id)
+		remove_zspec(id)
 		
 		client_print_color(0, "^3%s ^1is no longer ZSpectating.", szName)
 	}
@@ -155,14 +155,14 @@ public client_disconnect(id)
 
 count_admins()
 {
-	static id, count;
+	static id, count
 	for(id = 1; id <= MaxPlayers; id++ )
 	{
 		if(is_user_connected(id) && is_user_admin(id))
-		count++;
+		count++
 	}
 	
-	return count;
+	return count
 }
 
 client_print_color( index, const Msg[], any:...) 
