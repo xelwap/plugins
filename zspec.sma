@@ -30,8 +30,8 @@ public plugin_init()
 public RoundStart() 
 {
 	static Players[32], Num, Player, i
-	get_players( Players, Num ) 
-	for( i = 0; i < Num; i++ )
+	get_players( Players, Num) 
+	for( i = 0; i < Num; i++)
 	{
 		Player = Players[i]
 		remove_zspec(Player)
@@ -41,8 +41,8 @@ public RoundStart()
 public bb_prepphase_started()
 {
 	static Players[32], Num, Player, i
-	get_players( Players, Num ) 
-	for( i = 0; i < Num; i++ )
+	get_players( Players, Num) 
+	for( i = 0; i < Num; i++)
 	{
 		Player = Players[i]
 		remove_zspec(Player)
@@ -52,30 +52,30 @@ public bb_prepphase_started()
 public bb_round_started()
 {
 	static Players[32], Num, Player, i
-	get_players( Players, Num ) 
-	for( i = 0; i < Num; i++ )
+	get_players( Players, Num) 
+	for( i = 0; i < Num; i++)
 	{
 		Player = Players[i]
 		remove_zspec(Player)
 	}
 }
 
-public bb_zombie_class_picked(id, class)
+public bb_zombie_class_picked( id, class)
 {
 	new szName[33]
-	get_user_name(id, szName, charsmax(szName))
+	get_user_name( id, szName, charsmax(szName))
 	
 	if(ZSpectator[id])
 	{
 		remove_zspec(id)
 		
-		client_print_color(0, "^3%s ^1is no longer ZSpectating.", szName)
+		client_print_color( 0, "^3%s ^1is no longer ZSpectating.", szName)
 	}
 }
 
 public PlayerPreThink(id)
 {
-	new Button = pev(id,pev_button)
+	new Button = pev( id, pev_button)
     
 	if(Blocked[id] && (Button & IN_ATTACK || Button & IN_ATTACK2))
 		set_pev( id, pev_button, (Button & ~(IN_ATTACK | IN_ATTACK2)))
@@ -114,13 +114,13 @@ public ZSpec(id)
 	}
 		
 	new szName[33]
-	get_user_name(id, szName, charsmax(szName))
+	get_user_name( id, szName, charsmax(szName))
 	
 	if(ZSpectator[id])
 	{
 		remove_zspec(id)
 		
-		client_print_color(0, "^3%s ^1is no longer ZSpectating.", szName)
+		client_print_color( 0, "^3%s ^1is no longer ZSpectating.", szName)
 	}
 	
 	else
@@ -172,7 +172,7 @@ client_print_color( index, const Msg[], any:...)
 	
 	if(!index) 
 	{
-		for (new i = 1; i <= MaxPlayers; i++) 
+		for( new i = 1; i <= MaxPlayers; i++) 
 		{
 			if (!is_user_connected(i))
 				continue
@@ -186,7 +186,7 @@ client_print_color( index, const Msg[], any:...)
 	
 	else 
 	{
-		if (!is_user_connected(index))
+		if(!is_user_connected(index))
 			return
 		
 		message_begin( MSG_ONE, MsgSayText, _, index)
