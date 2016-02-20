@@ -1,4 +1,5 @@
-/* READ PLEASE, i've removed the rendering (fun) function and replaced it with addtofullpack, so the ct team can't see the zspectators i didn't want to resend you a PM, so i thought i'd notify you here instead*/
+/* READ PLEASE, i've removed the rendering (fun) function and replaced it with addtofullpack, 
+so the ct team can't see the zspectators i didn't want to resend you a PM, so i thought i'd notify you here instead*/
 
 #include <amxmodx>
 #include <amxmisc>
