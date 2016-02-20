@@ -1,0 +1,218 @@
+/* ===========================================================================
+    
+    -----------------------
+    -*- Zombie Spectate -*-
+    -----------------------
+    
+    (c) 2016 - Nova
+    Website: https://github.com/xelwap
+    
+=========================================================================== */
+
+// Includes
+#include < amxmisc >
+#include < cstrike >
+#include < fakemeta >
+#include < hamsandwich >
+#include < fun >
+#include < basebuilder >
+
+// Booleans
+new bool:g_bIsZombieSpectate[ 33 ];    
+new bool:g_bIsZombieSpectateBanned[ 33 ];
+
+// Initialize our plugin
+public plugin_init( )
+{
+    register_plugin( "[BB] Addon: Zombie Spectate", "1.0", "Nova" );
+    
+    register_forward( FM_AddToFullPack, "Forward_AddToFullPack", true );
+    register_forward( FM_PlayerPreThink, "Forward_PlayerPreThink", false );
+    
+    register_clcmd( "say /zs", "ClientCommand_ZombieSpectate" );
+    register_clcmd( "say /zsban", "ClientCommand_ZombieSpectateBan" );
+}
+
+public client_disconnect( Index )
+{
+    g_bIsZombieSpectate[ Index ] = false;
+    g_bIsZombieSpectateBanned[ Index ] = false;
+}
+
+public bb_buildphase_started( )
+{
+    // On round start, remove zombie spectate!
+    static Index;
+    for( Index = 1; Index <= g_iMaxPlayers; Index++ )
+    {
+        g_bIsZombieSpectate[ Index ] = false;
+        set_user_zombie_spectate( Index );
+    }
+}
+
+public Forward_AddToFullPack( es, e, iEntity, iHost, iHostFlags, iPlayer, pSet )
+{
+    if( is_user_alive( iEntity ) && is_user_alive( iHost ) )
+    {
+        if( g_bIsZombieSpectate[ iEntity ] && bb_is_user_zombie( iEntity ) && !bb_is_user_zombie( iHost ) )
+        {
+            set_es( es, ES_RenderMode, kRenderTransAdd );    
+            set_es( es, ES_RenderAmt, 0 )
+        }
+    }
+}
+
+public Forward_PlayerPreThink( Index )
+{
+    if( !is_user_alive( Index ) )
+        return;
+    
+    // Semiclip I guess :O
+    set_pev( Index, pev_solid, g_bIsZombieSpectate[ Index ] ? SOLID_NOT : SOLID_SLIDEBOX );
+    
+    static iButton;
+    iButton = pev( Index, pev_button );
+    
+    if( g_bIsZombieSpectate[ Index ] && ( ( iButton & IN_ATTACK ) || ( iButton & IN_ATTACK2 ) ) )
+        set_pev( Index, pev_button, iButton & ~( IN_ATTACK | IN_ATTACK2 ) );
+}
+
+public ClientCommand_ZombieSpectate( Index )
+{
+    if( g_bIsZombieSpectateBanned[ Index ] )
+    {
+        client_print( Index, print_chat, "You are banned from using this command." );
+        return PLUGIN_HANDLED;
+    }
+    
+    if( !bb_is_build_phase( ) )
+    {
+        client_print( Index, print_chat, "You cannot use this command after build phase is over." );
+        return PLUGIN_HANDLED;
+    }
+    
+    if( !is_user_alive( Index ) )
+    {
+        client_print( Index, print_chat, "You have to be alive in order to use this command." );
+        return PLUGIN_HANDLED;
+    }
+    
+    if( !bb_is_user_zombie( Index ) )
+    {
+        client_print( Index, print_chat, "You have to be a zombie in order to use this command." );
+        return PLUGIN_HANDLED;
+    }
+    
+    g_bIsZombieSpectate[ Index ] = !g_bIsZombieSpectate[ Index ];
+    
+    set_user_zombie_spectate( Index );
+    return PLUGIN_HANDLED;
+}
+
+public ClientCommand_ZombieSpectateBan( Index )
+{
+    if( !is_user_admin( Index ) )
+    {
+        client_print( Index, print_chat, "You have to be an administrator in order to use this command." );
+        return PLUGIN_HANDLED;
+    }
+    
+    show_menu_zombie_spectate_ban( Index );
+}
+
+set_user_zombie_spectate( Index )
+{
+    if( g_bIsZombieSpectate[ Index ] )
+    {
+        // Set no clip?
+        set_user_noclip( Index, 1 );
+
+        // Show message
+        client_print( Index, print_chat, "You are currently zombie spectating!" );
+    }
+    else
+    {
+        // Remove no clip and revive player :)
+        set_user_noclip( Index );
+        ExecuteHamB( Ham_CS_RoundRespawn, Index );
+        
+        // Show message
+        client_print( Index, print_chat, "You are not longer zombie spectating!" );
+    }
+}
+
+show_menu_zombie_spectate_ban( Index )
+{
+    static szMenuItem[ 128 ], szItemData[ 2 ], szName[ 32 ], Target;
+    formatex( szMenuItem, charsmax( szMenuItem ), "Zombie Spectate Ban/Unban Menu:\r" );
+    
+    new Menu = menu_create( szMenuItem, "_mZombieSpectateBan" );
+    
+    for( Target = 1; Target <= g_iMaxPlayers; Target++ )
+    {
+        if( !is_user_connected( Target ) )
+            continue;
+        
+        get_user_name( Target, szName, charsmax( szName ) );
+        formatex( szMenuItem, charsmax( szMenuItem ), "%s \r%s", szName, g_bIsZombieSpectateBanned[ Target ] ? "[Unban]" : "[Ban]" );
+        
+        // Instead of str_to_num( ); this one is better :D
+        szItemData[ 0 ] = Target;
+        szItemData[ 1 ] = 0;
+        
+        // add item to menu
+        menu_additem( Menu, szMenuItem, szItemData );
+    }
+    
+    if( menu_items( Menu ) <= 0 )
+    {
+        menu_destroy( Menu );
+        client_print( Index, print_chat, "No target is available to ban/unabn from zombie spectate" );
+        return;
+    }
+    
+    // Properties of the menu
+    menu_setprop( Menu, MPROP_BACKNAME, "Back" );
+    menu_setprop( Menu, MPROP_NEXTNAME, "Next" );
+    menu_setprop( Menu, MPROP_EXITNAME, "Exit" );
+    
+    // Fix for custom menus :P
+    set_pdata_int( Index, 205, 0, 5 );
+    menu_display( Index, Menu, 0 );
+}
+
+public _mZombieSpectateBan( Index, Menu, iKey )
+{
+    if( iKey == MENU_EXIT )
+    {
+        menu_destroy( Menu );
+        return PLUGIN_HANDLED;
+    }
+    
+    new Target = menu_item_getindex( Menu, iKey );
+    if( !is_user_connected( Target ) )
+    {
+        // Just debugging :D
+        client_print( Index, print_chat, "Invalid target selected: %d", Target );
+        return PLUGIN_HANDLED;
+    }
+    
+    // Unban if target is banned, and ban if target is not banned!
+    g_bIsZombieSpectateBanned[ Target ] = !g_bIsZombieSpectateBanned[ Target ];
+    
+    // If target is spectating and got this command executed on him, stop his zombie spectate!
+    if( g_bIsZombieSpectate[ Target ] )
+        g_bIsZombieSpectate[ Target ] = false;
+    
+    // Set up zombie spectate attributes on him
+    set_user_zombie_spectate( Target );
+}
+
+menu_item_getindex( Menu, iKey )
+{
+    static szItemData[ 2 ], iDummy, ItemIndex;
+    menu_item_getinfo( Menu, iKey, iDummy, szItemData, charsmax( szItemData ), _, _, iDummy );
+    ItemIndex = szItemData[ 0 ];
+    
+    return ItemIndex;
+} 
