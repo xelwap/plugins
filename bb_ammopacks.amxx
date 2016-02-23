@@ -1,6 +1,17 @@
+/* ------------------------------------------- 
+
+    -*- Plugin: [BB] Addon: Ammo-Pack -*- 
+    -*- Version: 1.0 -*- 
+    -*- Author: crnova -*- 
+     
+    (c) 2016 - crnova
+     
+ ---------------------------------------------*/ 
+
 #include <amxmodx>
 #include <cstrike>
 #include <hamsandwich>
+#include <nvault>
 
 enum _:ItemData
 {
@@ -12,43 +23,44 @@ enum _:ItemData
 
 new Array:g_aItems
 new g_iTotalItems
+new g_Vault
+new g_szAuthID[33][35]
+new g_pExpireDays
+new g_AP[33]
 
 public plugin_init()
 {
+    register_plugin( "[BB] Addon: Ammo-Pack", "1.0", "crnova")
+    
     register_clcmd( "say /shop", "clcmd_shop")
     register_clcmd( "say /ap", "clcmd_checkap")
+    
     g_aItems = ArrayCreate(ItemData)
+    g_pExpireDays = register_cvar( "cvar_expiredays" , "15")
 }
 
-public clcmd_checkap(id)
+public plugin_cfg()
 {
-  
+    g_Vault = nvault_open("yourvault")
+
+    if(g_Vault == INVALID_HANDLE)
+        set_fail_state("Error opening nVault")
+
+    nvault_prune( g_Vault, 0, get_systime() - (86400 * get_pcvar_num(g_pExpireDays)))
+}
+
+public plugin_end()
+{
+    nvault_close(g_Vault)
+}
 
 public plugin_natives()
 {
     register_library("bb_ammopacks")
     
+    register_native( "bb_get_user_ap", "_get_user_ap")
+	register_native( "bb_set_user_ap", "_set_user_ap")
     register_native( "shop_item_add", "_item_add")
-}
-
-public _item_add( iPlugin, iParams )
-{
-    new eItemData[ItemData]
-    
-    get_string( 1, eItemData[ItemName], charsmax(eItemData[ItemName]))
-    
-    eItemData[ItemCost] = get_param(2)
-    
-    eItemData[ItemPlugin] = iPlugin
-    
-    new szHandler[32]
-    get_string( 3, szHandler, charsmax(szHandler))
-    eItemData[ItemFuncID] = get_func_id(szHandler, iPlugin)
-    
-    ArrayPushArray( g_aItems, eItemData)
-    g_iTotalItems++
-    
-    return (g_iTotalItems - 1)
 }
 
 public clcmd_shop(id)
@@ -124,4 +136,69 @@ public MenuShop( id, hMenu, iItem)
     }
     
     ShowShopMenu( id, .iPage = (iItemIndex / 7))
+}
+
+public client_authorized(id)
+{
+    get_user_authid( id, g_szAuthID[id], charsmax(g_szAuthID[]))
+}
+
+public client_putinserver(id)
+    load_ap(id)
+    
+public client_disconnect(id)
+    save_ap(id)
+
+public _item_add( iPlugin, iParams )
+{
+    new eItemData[ItemData]
+    
+    get_string( 1, eItemData[ItemName], charsmax(eItemData[ItemName]))
+    
+    eItemData[ItemCost] = get_param(2)
+    
+    eItemData[ItemPlugin] = iPlugin
+    
+    new szHandler[32]
+    get_string( 3, szHandler, charsmax(szHandler))
+    eItemData[ItemFuncID] = get_func_id(szHandler, iPlugin)
+    
+    ArrayPushArray( g_aItems, eItemData)
+    g_iTotalItems++
+    
+    return (g_iTotalItems - 1)
+}
+
+public save_ap(id)
+{
+    new szAP[7]
+    new szKey[40]
+
+    formatex( szKey, charsmax(szKey), "%sAMMOPACK", g_szAuthID[id])
+    formatex( szAP, charsmax(szAP), "%d", bb_get_user_ap(id))
+    
+    nvault_set( g_Vault, szKey, szAP)
+}
+
+public load_ap(id)
+{
+    new szKey[40]
+    formatex( szKey, charsmax(szKey), "%sAMMOPACK", g_szAuthID[id])
+    new iAP = nvault_get( g_Vault, szKey)
+    if(iAP)
+    {
+        bb_set_user_ap( id, iAP)
+        nvault_remove( g_Vault, szKey)
+    }
+}
+
+public native_get_user_points(id)
+{
+	return g_AP[id]
+}
+
+// Native: surf_set_user_points
+public native_set_user_points(id, amount)
+{
+	g_AP[id] = amount
 }
