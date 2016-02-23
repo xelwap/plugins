@@ -1,0 +1,127 @@
+#include <amxmodx>
+#include <cstrike>
+#include <hamsandwich>
+
+enum _:ItemData
+{
+    ItemName[32],
+    ItemCost,
+    ItemPlugin,
+    ItemFuncID
+}
+
+new Array:g_aItems
+new g_iTotalItems
+
+public plugin_init()
+{
+    register_clcmd( "say /shop", "clcmd_shop")
+    register_clcmd( "say /ap", "clcmd_checkap")
+    g_aItems = ArrayCreate(ItemData)
+}
+
+public clcmd_checkap(id)
+{
+  
+
+public plugin_natives()
+{
+    register_library("bb_ammopacks")
+    
+    register_native( "shop_item_add", "_item_add")
+}
+
+public _item_add( iPlugin, iParams )
+{
+    new eItemData[ItemData]
+    
+    get_string( 1, eItemData[ItemName], charsmax(eItemData[ItemName]))
+    
+    eItemData[ItemCost] = get_param(2)
+    
+    eItemData[ItemPlugin] = iPlugin
+    
+    new szHandler[32]
+    get_string( 3, szHandler, charsmax(szHandler))
+    eItemData[ItemFuncID] = get_func_id(szHandler, iPlugin)
+    
+    ArrayPushArray( g_aItems, eItemData)
+    g_iTotalItems++
+    
+    return (g_iTotalItems - 1)
+}
+
+public clcmd_shop(id)
+{
+    if(!is_user_alive(id))
+        return PLUGIN_HANDLED
+        
+     ShowShopMenu( id, .iPage = 0 )
+     
+     return PLUGIN_CONTINUE
+}
+
+ShowShopMenu( id, iPage)
+{
+    if(!g_iTotalItems)
+    {
+        return
+    }
+    
+    iPage = clamp( iPage, 0, (g_iTotalItems - 1) / 7)
+    
+    new hMenu = menu_create( "Shop Menu", "MenuShop")
+    
+    new eItemData[ItemData]
+    new szItem[64]
+    
+    new szNum[3]
+    
+    for(new i = 0; i < g_iTotalItems; i++)
+    {
+        ArrayGetArray( g_aItems, i, eItemData)
+        
+        formatex( szItem, charsmax( szItem ), "%s \y%i AmmoPacks", eItemData[ItemName], eItemData[ItemCost])
+        
+        num_to_str( i, szNum, charsmax(szNum))
+        
+        menu_additem( hMenu, szItem, szNum)
+    }
+    
+    menu_display( id, hMenu, iPage)
+}
+
+public MenuShop( id, hMenu, iItem)
+{
+    if( iItem == MENU_EXIT )
+    {
+        menu_destroy( hMenu)
+        return
+    }
+    
+    new iAccess, szNum[ 3 ], hCallback
+    menu_item_getinfo( hMenu, iItem, iAccess, szNum, charsmax(szNum), _, _, hCallback)
+    menu_destroy(hMenu)
+    
+    new iItemIndex = str_to_num(szNum)
+    
+    new eItemData[ItemData]
+    ArrayGetArray( g_aItems, iItemIndex, eItemData)
+    
+    new iAP = bb_get_user_ap(id) - eItemData[ ItemCost ];
+    
+    if( iAP < 0 )
+    {
+        client_print( id, print_chat, "* You need $%i more to buy this item!", (iAP * -1))
+    }
+    else
+    {
+        bb_set_user_ap( id, iAP)
+        
+        callfunc_begin_i( eItemData[ItemFuncID], eItemData[ItemPlugin])
+        callfunc_push_int(id)
+        callfunc_end()
+    }
+    
+    ShowShopMenu( id, .iPage = (iItemIndex / 7))
+}
