@@ -13,4 +13,8 @@
     #pragma library bb_ammopacks
 #endif
 
-native shop_item_add( const szName[ ], const iCost, const szHandler[ ] );
+native shop_item_add( const szName[], const iCost, const szHandler[])
+
+native bb_get_user_ap(index)
+
+native bb_set_user_ap(index, amount)
